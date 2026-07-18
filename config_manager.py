@@ -2,8 +2,7 @@ import json
 import os
 
 class ConfigManager:
-    #standart names
-
+    #names
     SECTION_SERVER = 'server'
     KEY_HOST = 'host'
     KEY_PORT = 'port'
@@ -12,7 +11,7 @@ class ConfigManager:
     KEY_TG_ID = 'id'
     KEY_TG_API = 'api'
     
-    #standart const
+    #const
     DEFAULT_HOST = '192.168.1.69'
     DEFAULT_PORT = '4000'
     DEFAULT_TG_ID = '1570105921'
@@ -42,48 +41,42 @@ class ConfigManager:
                                 cls.KEY_TG_ID: cls.DEFAULT_TG_ID
                             }
                         }
-                with open(cls.TEMP_NAME, 'w', encoding='utf-8') as cnfg:
-                    json.dump(cls._data, cnfg, ensure_ascii=False, indent=4)
-                os.replace(cls.TEMP_NAME, cls.JSON_NAME)
+                cls._writer(cls._data)
+    @classmethod
+    def _writer(cls, data):
+        with open(cls.TEMP_NAME, 'w', encoding='utf-8') as cnfg:
+            json.dump(cls._data, cnfg, ensure_ascii=False, indent=4)
+        os.replace(cls.TEMP_NAME, cls.JSON_NAME)
+    
     #get
     @classmethod
     def _get(cls, section, key) -> str: #universal func
-        if cls._data:
-            value = cls._data[section][key]
-            return value
-        else:
-            cls.init()
-            value = cls._data[section][key]
-            return value
+        cls.init()
+        return cls._data[section][key]
+
     @classmethod
     def get_port(cls) -> str:
-        port = cls._get(cls.SECTION_SERVER, cls.KEY_PORT)
-        return port
+        return cls._get(cls.SECTION_SERVER, cls.KEY_PORT)
+
     @classmethod
     def get_host(cls) -> str:
-        host = cls._get(cls.SECTION_SERVER, cls.KEY_HOST)
-        return host
+        return cls._get(cls.SECTION_SERVER, cls.KEY_HOST)
+
     @classmethod
     def get_id(cls) -> str:
-        id = cls._get(cls.SECTION_TG, cls.KEY_TG_ID)
-        return id
+        return cls._get(cls.SECTION_TG, cls.KEY_TG_ID)
+        
     @classmethod
     def get_api(cls) -> str:
-        api = cls._get(cls.SECTION_TG, cls.KEY_TG_API)
-        return api
+        return cls._get(cls.SECTION_TG, cls.KEY_TG_API)
         
     #set
     @classmethod
     def _set(cls, section, key, value): #universal func
-        with open(cls.JSON_NAME, 'r', encoding='utf-8') as cnfg:
-            data = json.load(cnfg)
-        
-        data[section][key] = value
-        
-        with open(cls.TEMP_NAME, 'w', encoding='utf-8') as cnfg:
-            json.dump(data, cnfg, ensure_ascii=False, indent=4)
-        os.replace(cls.TEMP_NAME, cls.JSON_NAME)
+        cls.init()
         cls._data[section][key] = value
+        cls._writer(cls._data)
+        
         
     @classmethod
     def set_host(cls, host: str):
