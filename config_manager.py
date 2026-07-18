@@ -1,5 +1,6 @@
 import json
 import os
+import copy
 
 class ConfigManager:
     #names
@@ -8,7 +9,7 @@ class ConfigManager:
     KEY_PORT = 'port'
     
     SECTION_TG = 'tg'
-    KEY_TG_ID = 'id'
+    KEY_TG_ID = 'tg_id'
     KEY_TG_API = 'api'
     
     #const
@@ -22,28 +23,52 @@ class ConfigManager:
     #cache
     _data = None
     
+    _DEFAULT_DICT = {
+                    SECTION_SERVER:
+                        {
+                            KEY_HOST: DEFAULT_HOST,
+                            KEY_PORT: DEFAULT_PORT
+                        },
+                        SECTION_TG:
+                        {
+                            KEY_TG_API: DEFAULT_TG_API,
+                            KEY_TG_ID: DEFAULT_TG_ID
+                        }
+                    }
+    
     @classmethod
     def init(cls):
-        if not cls._data:
+        if cls._data is None:
             try:
-                with open(cls.JSON_NAME, 'r', encoding='utf-8') as cnfg:
-                    cls._data = json.load(cnfg)
-            except Exception as E:
-                cls._data = {
-                        cls.SECTION_SERVER:
-                            {
-                                cls.KEY_HOST: cls.DEFAULT_HOST,
-                                cls.KEY_PORT: cls.DEFAULT_PORT
-                            },
-                        cls.SECTION_TG:
-                            {
-                                cls.KEY_TG_API: cls.DEFAULT_TG_API,
-                                cls.KEY_TG_ID: cls.DEFAULT_TG_ID
-                            }
-                        }
-                cls._writer(cls._data)
+                cls._cache()
+            except (FileNotFoundError, json.JSONDecodeError):
+                cls._data = copy.deepcopy(cls._DEFAULT_DICT)
+                cls._writer()
+        if cls._check_config(cls._DEFAULT_DICT, cls._data):
+            cls._writer()
+            
     @classmethod
-    def _writer(cls, data):
+    def _check_config(cls, default: dict, config: dict):
+        changes = False
+        for key, value in default.items():
+            if key not in config or not isinstance(config[key], type(value)):
+                c_value = copy.deepcopy(value)
+                config[key] = c_value
+                changes = True
+                continue
+            
+            if isinstance(value, dict):
+                if cls._check_config(value, config[key]):
+                    changes = True
+                    
+        return changes
+    @classmethod
+    def _cache(cls):
+        with open(cls.JSON_NAME, 'r', encoding='utf-8') as cnfg:
+            cls._data = json.load(cnfg)
+            
+    @classmethod
+    def _writer(cls):
         with open(cls.TEMP_NAME, 'w', encoding='utf-8') as cnfg:
             json.dump(cls._data, cnfg, ensure_ascii=False, indent=4)
         os.replace(cls.TEMP_NAME, cls.JSON_NAME)
@@ -75,7 +100,7 @@ class ConfigManager:
     def _set(cls, section, key, value): #universal func
         cls.init()
         cls._data[section][key] = value
-        cls._writer(cls._data)
+        cls._writer()
         
         
     @classmethod
