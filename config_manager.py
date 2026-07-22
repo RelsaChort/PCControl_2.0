@@ -43,9 +43,9 @@ class ConfigManager:
                 cls._cache()
             except (FileNotFoundError, json.JSONDecodeError):
                 cls._data = copy.deepcopy(cls._DEFAULT_DICT)
-                cls._writer()
+                cls.save()
         if cls._check_config(cls._DEFAULT_DICT, cls._data):
-            cls._writer()
+            cls.save()
             
     @classmethod
     def _check_config(cls, default: dict, config: dict):
@@ -63,20 +63,32 @@ class ConfigManager:
                     
         return changes
     @classmethod
+    def _validate_keys(cls, section, key):
+        if section in cls._DEFAULT_DICT:
+            if not key in cls._DEFAULT_DICT[section]:
+                raise KeyError(f'key: "{key}" not found!')
+        else:
+            raise KeyError(f'section: "{section}" not found!')
+                
+    @classmethod
     def _cache(cls):
         with open(cls.JSON_NAME, 'r', encoding='utf-8') as cnfg:
             cls._data = json.load(cnfg)
             
     @classmethod
-    def _writer(cls):
+    def save(cls):
         with open(cls.TEMP_NAME, 'w', encoding='utf-8') as cnfg:
             json.dump(cls._data, cnfg, ensure_ascii=False, indent=4)
         os.replace(cls.TEMP_NAME, cls.JSON_NAME)
+    
+    
+    
     
     #get
     @classmethod
     def _get(cls, section, key) -> str: #universal func
         cls.init()
+        cls._validate_keys(section, key)
         return cls._data[section][key]
 
     @classmethod
@@ -97,21 +109,8 @@ class ConfigManager:
         
     #set
     @classmethod
-    def _set(cls, section, key, value): #universal func
+    def set(cls, section, key, value): #universal func
         cls.init()
+        cls._validate_keys(section, key)
         cls._data[section][key] = value
-        cls._writer()
         
-        
-    @classmethod
-    def set_host(cls, host: str):
-        cls._set(cls.SECTION_SERVER, cls.KEY_HOST, host)
-    @classmethod
-    def set_port(cls, port: str):
-        cls._set(cls.SECTION_SERVER, cls.KEY_PORT, port)
-    @classmethod
-    def set_tg_id(cls, id: str):
-        cls._set(cls.SECTION_TG, cls.KEY_TG_ID, id)
-    @classmethod
-    def set_api(cls, api: str):
-        cls._set(cls.SECTION_TG, cls.KEY_TG_API, api)
