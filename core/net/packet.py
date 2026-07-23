@@ -1,9 +1,21 @@
 import json
 
+from core.config_manager import ConfigManager as cfg
+
 class Packet:
     """
-    
+    Класс для создания пакетов единой архитектуры
     """
+
+    
+    #const
+    DEFAULT_PACK = {
+        "version": 1,
+        "tg_id": '',
+        "command": '',
+        "args": {}
+    }    
+    
     @staticmethod
     def dict_to_bytes(msg: dict) -> bytes:
         """
